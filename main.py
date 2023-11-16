@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 from surprise.model_selection import train_test_split
 
 import src.parse_args as parse_args
@@ -62,8 +63,29 @@ if args.targets:
 
     # Make predictions
     predictions = [model.model.predict(uid, iid, r_ui=verdict, verbose=False) for (uid, iid, verdict) in test_data]
+    model_preds = np.array([pred.est for pred in predictions])
 
-    df_targets['Rating'] = [pred.est for pred in predictions]
+    # substitute nan with mean
+    means = df_content.mean(numeric_only=True)
+    df_content2 = df_content.fillna(means)
+
+    # lookup item info
+    lookup_table = df_content2.set_index('ItemId')[['imdbVotes', 'Metascore', 'rtRating', 'imdbRating']].to_dict(orient='index')
+
+    # The final rating will be a weighted sum of some features
+    final_preds = []
+    for i in range(len(model_preds)):
+        itemId = predictions[i].iid
+        item_info = lookup_table[itemId]
+        rating = 0.25 * model_preds[i] + \
+                 0.6 * item_info['imdbVotes'] + \
+                 0.05 * item_info['Metascore'] + \
+                 0.05 * item_info['rtRating'] + \
+                 0.05 * item_info['imdbRating']
+        np.clip(rating, 0, 10)
+        final_preds.append(rating)
+
+    df_targets['Rating'] = final_preds
     
     if not os.path.exists('results'):
         os.makedirs('results')

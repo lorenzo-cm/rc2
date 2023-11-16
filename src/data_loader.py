@@ -32,8 +32,8 @@ def load_content():
     data_content['imdbVotes'] = data_content['imdbVotes'].str.replace(',', '')
 
     # converting to numeric data
-    data_content['Metascore'] = data_content['Metascore'].astype('Int32')
+    data_content['Metascore'] = data_content['Metascore'].astype('float32')
     data_content['imdbRating'] = data_content['imdbRating'].astype('float32')
-    data_content['imdbVotes'] = data_content['imdbVotes'].astype('Int32')
+    data_content['imdbVotes'] = data_content['imdbVotes'].astype('float32')
     
     return data_content
