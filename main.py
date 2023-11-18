@@ -36,7 +36,7 @@ if not args.new_model:
 
 else:
     print('Training new model')
-    model.train(train_data)
+    model.train(train_data, n_factors=150, n_epochs=25)
 
     model_filename = 'model/trained_model.pkl'
     model.save_model(model_filename)
@@ -46,9 +46,6 @@ else:
 if not args.train_all:
     print('Evaluating model')
     preds, rmse_value, mae_value = model.test(test_data)
-
-    for pred in preds[:10]:
-        print(pred)
 
     print(f'RMSE: {rmse_value}, MAE: {mae_value}')
 
@@ -65,38 +62,35 @@ if args.targets:
     predictions = [model.model.predict(uid, iid, r_ui=verdict, verbose=False) for (uid, iid, verdict) in test_data]
     model_preds = np.array([pred.est for pred in predictions])
 
-    # substitute nan with mean
-    means = df_content.mean(numeric_only=True)
-    df_content2 = df_content.fillna(means)
-
     # lookup item info
-    lookup_table = df_content2.set_index('ItemId')[['imdbVotes', 'Metascore', 'rtRating', 'imdbRating']].to_dict(orient='index')
+    lookup_table = df_content.set_index('ItemId')[['imdbVotes', 'Metascore', 'rtRating', 'imdbRating', 'Awards']].to_dict(orient='index')
 
     # The final rating will be a weighted sum of some features
     final_preds = []
     for i in range(len(model_preds)):
         itemId = predictions[i].iid
         item_info = lookup_table[itemId]
-        rating = 0.25 * model_preds[i] + \
-                 0.6 * item_info['imdbVotes'] + \
-                 0.05 * item_info['Metascore'] + \
-                 0.05 * item_info['rtRating'] + \
-                 0.05 * item_info['imdbRating']
-        np.clip(rating, 0, 10)
+        rating = 0.25 * model_preds[i] * \
+                 0.7 * item_info['imdbVotes'] * \
+                 0.02 * item_info['Metascore'] * \
+                 0.02 * item_info['rtRating'] * \
+                 0.03 * item_info['imdbRating'] + \
+                 6 * item_info['Awards']
+        # np.clip(rating, 0, 10)
         final_preds.append(rating)
 
     df_targets['Rating'] = final_preds
     
     if not os.path.exists('results'):
         os.makedirs('results')
-
-    df_targets.to_csv('results/target_predictions.csv', index=False)
     
         # Sort the DataFrame by UserId and then by Rating in descending order
     df_sorted = df_targets.sort_values(by=['UserId', 'Rating'], ascending=[True, False])
+
+    df_sorted.to_csv('results/target_predictions_sorted.csv', index=False)
 
     # Drop the Rating column as it's not needed in the final output
     df_final = df_sorted.drop('Rating', axis=1)
 
     # Write to a CSV file
-    df_final.to_csv('sorted_items_per_user.csv', index=False)
+    df_final.to_csv('results/sorted_items_per_user.csv', index=False)

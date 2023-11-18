@@ -24,13 +24,9 @@ class RecommenderSVD:
         with open(filename, 'wb') as file:
             pickle.dump(self.model, file)
 
-    def train(self, data, save=False):
-        self.model = SVD()
+    def train(self, data, n_factors=100, n_epochs=20, lr_all=0.005, reg_all=0.02, biased=True):
+        self.model = SVD(n_factors=n_factors, n_epochs=n_epochs, lr_all=lr_all, reg_all=reg_all, biased=biased)
         self.model.fit(data)
-        
-        if save:
-            self.load_model
-
         return self.model
     
     def test(self, data):
