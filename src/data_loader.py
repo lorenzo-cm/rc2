@@ -10,7 +10,7 @@ def load_ratings():
     reader = Reader(rating_scale=(min(df_ratings['Rating']), max(df_ratings['Rating'])))
 
     # Load the dataset into Surprise
-    return  Dataset.load_from_df(df_ratings[['UserId', 'ItemId', 'Rating']], reader)
+    return  Dataset.load_from_df(df_ratings[['UserId', 'ItemId', 'Rating']], reader), df_ratings
 
 def load_content():
     df_content = pd.read_json('data/content.jsonl', lines=True)
@@ -50,5 +50,5 @@ def load_content():
         min_rating = data_content[col].min()
         max_rating = data_content[col].max()
         data_content[col] = 0 + ((data_content[col] - min_rating) * (10 - 0)) / (max_rating - min_rating)
-    
+
     return data_content

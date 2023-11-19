@@ -15,7 +15,7 @@ random_state = 42
 args = parse_args.parse()
 
 # Load data
-data = data_loader.load_ratings()
+data, df_ratings = data_loader.load_ratings()
 df_content = data_loader.load_content()
 
 # Divide into data into test and train
@@ -63,23 +63,23 @@ if args.targets:
     model_preds = np.array([pred.est for pred in predictions])
 
     # lookup item info
-    lookup_table = df_content.set_index('ItemId')[['imdbVotes', 'Metascore', 'rtRating', 'imdbRating', 'Awards']].to_dict(orient='index')
+    lookup_table_item = df_content.set_index('ItemId')[['imdbVotes', 'Metascore', 'rtRating', 'imdbRating', 'Awards']].to_dict(orient='index')
 
     # The final rating will be a weighted sum of some features
     final_preds = []
     for i in range(len(model_preds)):
         itemId = predictions[i].iid
-        item_info = lookup_table[itemId]
-        rating = 0.25 * model_preds[i] * \
-                 0.7 * item_info['imdbVotes'] * \
-                 0.02 * item_info['Metascore'] * \
-                 0.02 * item_info['rtRating'] * \
-                 0.03 * item_info['imdbRating'] + \
-                 6 * item_info['Awards']
+        item_info = lookup_table_item[itemId]
+        rating =  4 * model_preds[i] * item_info['imdbVotes'] + 0.1 * item_info['Metascore'] + 0.15 * item_info['rtRating'] + 0.1 * item_info['imdbRating'] + 2.5 * item_info['Awards']
         # np.clip(rating, 0, 10)
         final_preds.append(rating)
 
     df_targets['Rating'] = final_preds
+
+    # normalize col rating
+    min_rating = df_targets['Rating'].min()
+    max_rating = df_targets['Rating'].max()
+    df_targets['Rating'] = 0 + ((df_targets['Rating'] - min_rating) * (10 - 0)) / (max_rating - min_rating)
     
     if not os.path.exists('results'):
         os.makedirs('results')
