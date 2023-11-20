@@ -3,8 +3,9 @@ import numpy as np
 
 from surprise import Dataset, Reader
 
-def load_ratings():
-    df_ratings = pd.read_json('data/ratings.jsonl', lines=True)
+def load_ratings(ratings_file):
+    
+    df_ratings = pd.read_json(ratings_file, lines=True)
 
     # Define a reader with the rating scale
     reader = Reader(rating_scale=(min(df_ratings['Rating']), max(df_ratings['Rating'])))
@@ -12,8 +13,8 @@ def load_ratings():
     # Load the dataset into Surprise
     return  Dataset.load_from_df(df_ratings[['UserId', 'ItemId', 'Rating']], reader), df_ratings
 
-def load_content():
-    df_content = pd.read_json('data/content.jsonl', lines=True)
+def load_content(content_file):
+    df_content = pd.read_json(content_file, lines=True)
 
     # Getting the Rotten Tomatoes ratings
     rt_ratings = []

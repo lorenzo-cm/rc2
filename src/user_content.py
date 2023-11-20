@@ -15,7 +15,7 @@ def generate_user_item_predictions(df_c):
         DataFrame: DataFrame with user-item rating predictions.
     """
     # TF-IDF Vectorization
-    tfidf_vectorizer = TfidfVectorizer(max_features=500, ngram_range=(1, 1))
+    tfidf_vectorizer = TfidfVectorizer(max_features=10000, ngram_range=(1, 2))
     tfidf_matrix = tfidf_vectorizer.fit_transform(df_c['Plot'])
     tfidf_df = pd.DataFrame(tfidf_matrix.toarray(), columns=tfidf_vectorizer.get_feature_names_out())
     return tfidf_df
