@@ -3,9 +3,11 @@ import pandas as pd
 import numpy as np
 from surprise.model_selection import train_test_split
 
+
 import src.parse_args as parse_args
 import src.data_loader as data_loader
 import src.model as SVD_model
+import src.user_content as user_content
 
 # global variables
 test_size = 0.2
