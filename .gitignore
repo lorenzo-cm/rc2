@@ -4,3 +4,4 @@
 *.npy
 *.pyc
 __pycache__
+data
