@@ -1,27 +1,34 @@
 import os
 import pandas as pd
 import numpy as np
+import sys
 from surprise.model_selection import train_test_split
-
 
 import src.parse_args as parse_args
 import src.data_loader as data_loader
 import src.model as SVD_model
-import src.user_content as user_content
 
 # global variables
 test_size = 0.2
 random_state = 42
 
+
+
+ratings_file, content_file, targets_file = sys.argv[1], sys.argv[2], sys.argv[3]
+
+targets, train_all, new_model = True, True, True
+
+
+
 # Parse args
-args = parse_args.parse()
+# args = parse_args.parse()
 
 # Load data
-data, df_ratings = data_loader.load_ratings()
-df_content = data_loader.load_content()
+data, df_ratings = data_loader.load_ratings(ratings_file=ratings_file)
+df_content = data_loader.load_content(content_file=content_file)
 
 # Divide into data into test and train
-if args.train_all:
+if train_all:
     print('Using all data to train')
     test_size = 0
     train_data = data.build_full_trainset()
@@ -32,7 +39,7 @@ else:
 # model
 model = SVD_model.RecommenderSVD()
 
-if not args.new_model:
+if not new_model:
     print('Loading model from file')
     model.load_model('model/trained_model.pkl')
 
@@ -45,14 +52,14 @@ else:
     print(f'Model saved to {model_filename}')
 
 
-if not args.train_all:
+if not train_all:
     print('Evaluating model')
     preds, rmse_value, mae_value = model.test(test_data)
 
     print(f'RMSE: {rmse_value}, MAE: {mae_value}')
 
 
-if args.targets:
+if targets:
     print('Generating predictions for targets')
     
     df_targets = pd.read_csv('data/targets.csv')
@@ -72,7 +79,12 @@ if args.targets:
     for i in range(len(model_preds)):
         itemId = predictions[i].iid
         item_info = lookup_table_item[itemId]
-        rating =  4 * model_preds[i] * item_info['imdbVotes'] + 0.1 * item_info['Metascore'] + 0.15 * item_info['rtRating'] + 0.1 * item_info['imdbRating'] + 2.5 * item_info['Awards']
+        rating = 0.25 * model_preds[i] * \
+                 0.7 * item_info['imdbVotes'] * \
+                 0.02 * item_info['Metascore'] * \
+                 0.02 * item_info['rtRating'] * \
+                 0.03 * item_info['imdbRating'] + \
+                 6 * item_info['Awards']
         # np.clip(rating, 0, 10)
         final_preds.append(rating)
 
